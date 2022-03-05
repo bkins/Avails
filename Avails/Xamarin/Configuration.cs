@@ -37,6 +37,13 @@ namespace Avails.Xamarin
                                  , value);
         }
 
+        public static int Usage
+        {
+            get => Preferences.Get(nameof(Usage)
+                                 , 0);
+            set => Preferences.Set(nameof(Usage)
+                                 , value);
+        }
     }
     
 }

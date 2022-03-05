@@ -4,9 +4,9 @@ namespace Avails.Xamarin
 {
     public static class GlobalKeyboards
     {
-        public static Keyboard None                   { get; private set; }
-        public static Keyboard All                    { get; private set; }
-        public static Keyboard Character              { get; set; }
+        public static Keyboard None                   { get; }
+        public static Keyboard All                    { get; }
+        public static Keyboard Character              { get; }
         public static Keyboard NoCapitalization       { get; set; }
         public static Keyboard SentenceCapitalization { get; set; }
         public static Keyboard WordCapitalization     { get; set; }

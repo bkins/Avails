@@ -10,7 +10,7 @@ namespace Avails.Xamarin.Controls
     /// </summary>
     public class DateTimePicker : SfPicker
     {
-        public ObservableCollection<object> DateTime { get; set; }
+        public ObservableCollection<object> DateTime { get; }
         public ObservableCollection<object> Date;
         public ObservableCollection<object> Year;
         public ObservableCollection<object> Month;
@@ -76,7 +76,7 @@ namespace Avails.Xamarin.Controls
                 Month.Add(ShortMonth(month));
             }
 
-            for (int day = 1; day <= 31; day++)
+            for (var day = 1; day <= 31; day++)
             {
                 Day.Add(PadDay(day));
             }
@@ -136,7 +136,7 @@ namespace Avails.Xamarin.Controls
 
         private static string PadDay(int day)
         {
-            string date = string.Empty;
+            var date = string.Empty;
 
             date += day < 10 ?
                             $"0{day}" :

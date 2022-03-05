@@ -10,7 +10,7 @@ namespace Avails.Xamarin
         {
             try
             {
-                Navigate($"{nameOfPage}");
+                await Navigate($"{nameOfPage}");
             }
             catch (Exception e)
             {
@@ -37,6 +37,17 @@ namespace Avails.Xamarin
                                           , string valueOfParameter2)
         {
             await Navigate($"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}&{nameOfParameter2}={valueOfParameter2}");
+        }
+        
+        public static async Task NavigateTo(string nameOfPage
+                                          , string nameOfParameter1
+                                          , string valueOfParameter1
+                                          , string nameOfParameter2
+                                          , string valueOfParameter2
+                                          , string nameOfParameter3
+                                          , string valueOfParameter3)
+        {
+            await Navigate($"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}&{nameOfParameter2}={valueOfParameter2}&{nameOfParameter3}={valueOfParameter3}");
         }
 
         private static async Task Navigate(string path)

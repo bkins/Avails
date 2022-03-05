@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using static System.StringComparison;
 
 namespace Avails.D_Flat
 {
@@ -41,6 +42,8 @@ namespace Avails.D_Flat
         
         public static TimeSpan ToTime(this string timeAsString)
         {
+            //BENDO: Refactor this method
+
             //No value, return a new TimeSpan
             if (timeAsString.IsNullEmptyOrWhitespace())
             {
@@ -122,7 +125,7 @@ namespace Avails.D_Flat
 
         public static string ToShortForm(this TimeSpan t)
         {
-            string shortForm = "";
+            var shortForm = "";
 
             if (t.Hours > 0)
             {
@@ -133,6 +136,14 @@ namespace Avails.D_Flat
             shortForm += $"{t.Minutes.ToString().PadLeft(2, '0')}:{t.Seconds.ToString().PadLeft(2, '0')}";
 
             return shortForm;
+        }
+
+        public static bool IsTrue(this string value)
+        {
+            return value.Equals("yes",  CurrentCultureIgnoreCase)
+                || value.Equals("y",    CurrentCultureIgnoreCase)
+                || value.Equals("true", CurrentCultureIgnoreCase)
+                || value.Equals("t",    CurrentCultureIgnoreCase);
         }
     }
 }
