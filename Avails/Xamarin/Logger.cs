@@ -38,6 +38,21 @@ namespace Avails.Xamarin
             FullLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Logger.txt");
         }
 
+        public static void WriteLineToToastForced(string    message
+                                                , Category  category
+                                                , Exception ex = null)
+        {
+            var setting = WriteToToast;
+
+            WriteToToast = true;
+
+            WriteLine(message
+                    , category
+                    , ex);
+
+            WriteToToast = setting;
+        }
+
         public static void WriteLine(string    message
                                    , Category  category
                                    , Exception ex = null)
@@ -59,7 +74,7 @@ namespace Avails.Xamarin
 
             LogToFile(completeLogMessage);
 
-            LogToToast(completeLogMessage);
+            LogToToast(message);
         }
 
         private static void LogToToast(string completeLogMessage)

@@ -47,7 +47,8 @@ namespace Avails.Xamarin
                                           , string nameOfParameter3
                                           , string valueOfParameter3)
         {
-            await Navigate($"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}&{nameOfParameter2}={valueOfParameter2}&{nameOfParameter3}={valueOfParameter3}");
+            var path = $"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}&{nameOfParameter2}={valueOfParameter2}&{nameOfParameter3}={valueOfParameter3}";
+            await Navigate(path);
         }
 
         private static async Task Navigate(string path)
