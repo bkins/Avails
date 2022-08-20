@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Avails.Xamarin.Logger;
 using Xamarin.Forms;
+
+// using Microsoft.Maui.Controls;
 
 namespace Avails.Xamarin
 {
@@ -51,6 +54,22 @@ namespace Avails.Xamarin
             await Navigate(path);
         }
 
+        public static async Task NavigateTo(string nameOfPage
+                                          , string nameOfParameter1
+                                          , string valueOfParameter1
+                                          , string nameOfParameter2
+                                          , string valueOfParameter2
+                                          , string nameOfParameter3
+                                          , string valueOfParameter3
+                                          , string nameOfParameter4
+                                          , string valueOfParameter4)
+        {
+            var path
+            = $"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}&{nameOfParameter2}={valueOfParameter2}&{nameOfParameter3}={valueOfParameter3}&{nameOfParameter4}={valueOfParameter4}";
+
+            await Navigate(path);
+        }
+
         private static async Task Navigate(string path)
         {
             try
@@ -59,9 +78,7 @@ namespace Avails.Xamarin
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-
-                throw;
+                Logger.Logger.WriteLineToToastForced(e.Message, Category.Error, e);
             }
             
         }

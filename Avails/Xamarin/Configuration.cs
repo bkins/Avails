@@ -1,4 +1,5 @@
-﻿using Xamarin.Essentials;
+﻿
+using Xamarin.Essentials;
 
 namespace Avails.Xamarin
 {
@@ -42,6 +43,14 @@ namespace Avails.Xamarin
             get => Preferences.Get(nameof(Usage)
                                  , 0);
             set => Preferences.Set(nameof(Usage)
+                                 , value);
+        }
+
+        public static bool NeverShowLogSizeWarning
+        {
+            get => Preferences.Get(nameof(NeverShowLogSizeWarning)
+                                 , false);
+            set => Preferences.Set(nameof(NeverShowLogSizeWarning)
                                  , value);
         }
     }
