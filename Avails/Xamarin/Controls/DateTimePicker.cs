@@ -18,8 +18,10 @@ namespace Avails.Xamarin.Controls
         public ObservableCollection<object> Minute;
         public ObservableCollection<object> Hour;
 
-        //AM and PM
-        public ObservableCollection<object> Format;
+        /// <summary>
+        /// AM and PM
+        /// </summary>
+        public ObservableCollection<object> Format { get; set; }
 
         /// <summary>
         /// Header api holds the column name for every column in DateTime picker

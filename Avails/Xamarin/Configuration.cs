@@ -53,6 +53,14 @@ namespace Avails.Xamarin
             set => Preferences.Set(nameof(NeverShowLogSizeWarning)
                                  , value);
         }
+
+        public static double RequestedEntryTextHeight
+        {
+            get => Preferences.Get(nameof(RequestedEntryTextHeight)
+                                 , 25.0);
+            set => Preferences.Set(nameof(RequestedEntryTextHeight)
+                                 , value);
+        }
     }
     
 }
