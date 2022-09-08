@@ -71,7 +71,7 @@ namespace Avails.Xamarin.Logger
                 select new LogLine
                        {
                            TimeStamp = lineTimeStamp
-                         , Category  = lineCategory
+                         , Category  = GetEnum(lineCategory)
                          , Message   = lineMessage
                        } ).ToList();
 
@@ -79,54 +79,82 @@ namespace Avails.Xamarin.Logger
             //                 .ToList();
         }
 
-        public static string ToggleLogListOrderByTimeStamp(string searchEditorText)
+        public static string ToggleLogListOrderByTimeStampAsSting(SearchOptions options)
         {
-            return Ascending ? 
-                        ToStringOrderedByTimeStampDescending(searchEditorText) 
-                      : ToStringOrderedByTimeStampAscending(searchEditorText);
+            
+            var logAsString = Ascending
+                ? ToStringOrderedByTimeStampDescending(options)
+                : ToStringOrderedByTimeStampAscending(options);
+            
+            return logAsString;
         }
 
-        private static string ToStringOrderedByTimeStampDescending(string searchEditorText)
+        public static IOrderedEnumerable<LogLine> ToggleLogListOrderByTimeStamp(SearchOptions options)
+        {
+            return Ascending
+                ? ToListOrderedByTimeStampDescending(options)
+                : ToListOrderedByTimeStampAscending(options);
+        }
+        private static string ToStringOrderedByTimeStampDescending(SearchOptions options)
         {
             Ascending = ! Ascending;
             
-            var theList = ToListOrderedByTimeStampDescending(searchEditorText);
+            var theList = ToListOrderedByTimeStampDescending(options);
 
             return ListToString(theList.ToList());
         }
 
-        private static string ToStringOrderedByTimeStampAscending(string searchEditorText)
+        private static string ToStringOrderedByTimeStampAscending(SearchOptions options)
         {
             Ascending = ! Ascending;
             
-            var theList = ToListOrderedByTimeStampAscending(searchEditorText);
+            var theList = ToListOrderedByTimeStampAscending(options);
 
             return ListToString(theList.ToList());
         }
 
-        private static IOrderedEnumerable<LogLine> ToListOrderedByTimeStampDescending(string searchEditorText)
+        private static IOrderedEnumerable<LogLine> ToListOrderedByTimeStampDescending(SearchOptions options)
         {
-            if (searchEditorText.IsNullEmptyOrWhitespace())
+            if (options.SearchTerm.IsNullEmptyOrWhitespace())
             {
-                return ToList().OrderByDescending(fields => fields.TimestampDateTime);
+                return ToList().Where(  fields => FilterOptionsByCategory(options, fields))
+                               .OrderByDescending( fields => fields.TimestampDateTime);
             }
             
-            return ToList().Where( fields => fields.TimeStamp.Contains(searchEditorText, StringComparison.OrdinalIgnoreCase)
-                                          || fields.Category.Contains(searchEditorText, StringComparison.OrdinalIgnoreCase)
-                                          || fields.Message.Contains(searchEditorText, StringComparison.OrdinalIgnoreCase))
+            return ToList().Where(  fields => FilterBySearchTerm(options, fields)
+                                           && FilterOptionsByCategory(options, fields))
                            .OrderByDescending(fields => fields.TimestampDateTime);
         }
 
-        private static IOrderedEnumerable<LogLine> ToListOrderedByTimeStampAscending(string searchEditorText)
+        private static bool FilterBySearchTerm(SearchOptions options
+                                             , LogLine       fields)
         {
-            if (searchEditorText.IsNullEmptyOrWhitespace())
+            return (   fields.TimeStamp.Contains(options.SearchTerm
+                                               , StringComparison.OrdinalIgnoreCase)
+                    || fields.Category.ToString().Contains(options.SearchTerm
+                                              , StringComparison.OrdinalIgnoreCase)
+                    || fields.Message.Contains(options.SearchTerm
+                                             , StringComparison.OrdinalIgnoreCase) );
+        }
+
+        private static bool FilterOptionsByCategory(SearchOptions options
+                                                  , LogLine       fields)
+        {
+            return ( fields.Category == Category.Error && options.ShowErrors )
+                || ( fields.Category == Category.Warning && options.ShowWarnings )
+                || ( fields.Category == Category.Information && options.ShowInformation );
+        }
+
+        private static IOrderedEnumerable<LogLine> ToListOrderedByTimeStampAscending(SearchOptions options)
+        {
+            if (options.SearchTerm.IsNullEmptyOrWhitespace())
             {
-                return ToList().OrderBy(fields => fields.TimestampDateTime);
+                return ToList().Where(fields=>FilterOptionsByCategory(options, fields))
+                               .OrderBy(fields => fields.TimestampDateTime);
             }
             
-            return ToList().Where( fields => fields.TimeStamp.Contains(searchEditorText, StringComparison.OrdinalIgnoreCase)
-                                          || fields.Category.Contains(searchEditorText, StringComparison.OrdinalIgnoreCase)
-                                          || fields.Message.Contains(searchEditorText, StringComparison.OrdinalIgnoreCase))
+            return ToList().Where( fields => FilterBySearchTerm(options, fields)
+                                   && FilterOptionsByCategory(options, fields))
                            .OrderBy(fields => fields.TimestampDateTime);
         }
 
@@ -148,8 +176,26 @@ namespace Avails.Xamarin.Logger
 
             foreach (var line in list)
             {
-                log.AppendLine(line.ToString());
+                // if (line.Category == Category.Error)
+                // {
+                //     line. = line..Replace("[Error]"
+                //                                     , "<p style=\"color:red\">[Error]</p>");
+                // }
+                //
+                // if (line..Contains("[Warning]"))
+                // {
+                //     line. = line..Replace("[Warning]"
+                //                                     , "<p style=\"color:yellow\">[Warning]</p>");
+                // }
+                //
+                // if (line..Contains("[Information]"))
+                // {
+                //     line. = line..Replace("[Information]"
+                //                                     , $"<p style=\"color:green\">[Information]</p>");
+                // }
+                log.AppendLine(line.ToString(true));
             }
+            
 
             return log.ToString();
         }
@@ -222,11 +268,11 @@ namespace Avails.Xamarin.Logger
         }
 
         private static LogLine AddToLogList(string   message
-                                       , Category category)
+                                          , Category category)
         {
             var line = new LogLine
                        {
-                           Category  = category.ToString()
+                           Category  = category
                          , Message   = message
                        };
 
@@ -405,14 +451,28 @@ namespace Avails.Xamarin.Logger
             File.Create(FullLogPath);
         }
 
-        public static string SearchLog(string searchTerm)
+        public static string SearchLog(SearchOptions options)
         {
-            var resultsList = LogList.Where(fields => fields.TimeStamp.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
-                                                   || fields.Category.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
-                                                   || fields.Message.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+
+            var resultsList = LogList.Where(fields =>  FilterBySearchTerm(options
+                                                                        , fields)
+                                                    && FilterOptionsByCategory(options
+                                                                             , fields))
                                      .ToList();
 
             return ListToString(resultsList);
+        }
+        public static Category GetEnum(string enumName)
+        {
+            return enumName switch
+            {
+                nameof(Category.Error) => Category.Error
+              , nameof(Category.Warning) => Category.Warning
+              , nameof(Category.Information) => Category.Information
+              , _ => Category.Unknown
+            };
+
+            ;
         }
     }
 

@@ -8,8 +8,11 @@
   <ItemGroup>
     <PackageReference Include="NLog" Version="5.0.2" />
     <PackageReference Include="SQLiteNetExtensions" Version="2.1.0" />
+    <PackageReference Include="Syncfusion.Xamarin.Buttons" Version="20.2.0.44" />
     <PackageReference Include="Syncfusion.Xamarin.Core" Version="20.2.0.44" />
+    <PackageReference Include="Syncfusion.Xamarin.Expander" Version="19.4.0.40" />
     <PackageReference Include="Syncfusion.Xamarin.SfPicker" Version="20.2.0.44" />
+    <PackageReference Include="Syncfusion.Xamarin.SfRichTextEditor" Version="20.2.0.44" />
     <PackageReference Include="System.Json" Version="4.7.1" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
   </ItemGroup>
@@ -20,6 +23,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\TTR\ApplicationExceptions\ApplicationExceptions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Xamarin\Views\LoggingView\MessageLog.xaml.cs">
+      <DependentUpon>MessageLog.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
 </Project>

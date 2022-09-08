@@ -1,14 +1,13 @@
 ﻿using System;
-using Avails.D_Flat.Extensions;
 
 namespace Avails.Xamarin.Logger
 {
     public class LogLine
     {
-        public string TimeStamp { get; set; }
-        public string Category  { get; set; }
-        public string Message   { get; set; }
-        
+        public string   TimeStamp { get; set; }
+        public Category Category  { get; set; }
+        public string   Message   { get; set; }
+
         public DateTime TimestampDateTime
         {
             get => DateTime.Parse(TimeStamp);
@@ -19,15 +18,27 @@ namespace Avails.Xamarin.Logger
             TimeStamp = $"{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}";
         }
         
-        public override string ToString()
+        public string ToString(bool formatAsHtml = false)
         {
-            if (Category is null 
-             || Category.IsNullEmptyOrWhitespace())
+            return formatAsHtml 
+                ? BuildLineAsHtml() 
+                : $"{TimeStamp} | {Category.ToString()} | {Message}";
+        }
+
+        private string BuildLineAsHtml()
+        {
+            var timeStamp = $"<p style=\"color:gray\">{TimeStamp}</p>";
+            var category  = Category.ToString() ?? string.Empty;
+
+            category = Category switch
             {
-                return Message;
-            }
-            
-            return $"{TimeStamp} | {Category} | {Message}";
+                Category.Error => $"<p style=\"color:red\">{Category.ToString()}</p>"
+              , Category.Warning => $"<p style=\"color:yellow\">{Category.ToString()}</p>"
+              , Category.Information => $"<p style=\"color:green\">{Category.ToString()}</p>"
+              , _ => category
+            };
+
+            return $"{category}{timeStamp}{Message}<hr style='margin-top:1.5em' />";
         }
     }
 }
