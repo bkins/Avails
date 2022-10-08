@@ -1,5 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 
+<!--TODO: Added the following images (*.png) to the appropriate Target projects:-->
+<!--BENDO: Expose the setting of these images from the code-behind-->
+<!--       * baseline_search_black_48.png-->
+<!--       * Delete.png-->
+<!--       * baseline_swap_vert_black_18.png-->
+
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:viewmodel="clr-namespace:Avails.Xamarin.Views.LoggingPage;assembly=Avails"
@@ -12,11 +18,9 @@
     <ContentPage.ToolbarItems>
         
         <ToolbarItem x:Name="ShowSearchToolbarItem"
-                     IconImageSource="baseline_search_black_48.png"
                      Clicked="ShowSearchToolbarItem_OnClicked"
                      />
         <ToolbarItem x:Name="ClearLogToolbarItem"
-                     IconImageSource="Delete.png"
                      Clicked="ClearLogToolbarItem_OnClicked"
                      />
         <ToolbarItem x:Name="ShowSize"
@@ -39,11 +43,11 @@
                   Grid.ColumnSpan="3"
                   IsVisible="{Binding ShowSearchOptions}"
                   >
-                
+                <!-- Source="baseline_swap_vert_black_18.png" -->
                 <ImageButton x:Name="ReorderButton"
                              Grid.Column="0"
                              Grid.Row="0"
-                             Source="baseline_swap_vert_black_18.png"
+                             
                              BackgroundColor="Transparent"
                              Clicked="LogDescending_OnClicked" 
                              />

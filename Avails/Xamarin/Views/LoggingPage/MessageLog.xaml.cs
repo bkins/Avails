@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Reflection;
 using Avails.D_Flat;
 using Avails.Xamarin.Logger;
 using Syncfusion.XForms.Buttons;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
+using Log = Avails.Xamarin.Logger.Logger;
 using static Avails.Xamarin.Configuration;
 
 namespace Avails.Xamarin.Views.LoggingPage
@@ -11,6 +13,9 @@ namespace Avails.Xamarin.Views.LoggingPage
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MessageLog : ContentPage
     {
+        public ImageSource image { get; set; }
+        public ImageSource SearchImage { get; set; }
+
         private MessageLogViewModel PageData      { get; set; }
         private SearchOptions       SearchOptions { get; set; }
         
@@ -21,12 +26,12 @@ namespace Avails.Xamarin.Views.LoggingPage
 
         public MessageLog()
         {
-            Logger.Logger.WriteLine("Test of information.", Category.Information);
-            Logger.Logger.WriteLine("Test og Warning", Category.Warning);
-            Logger.Logger.WriteLine("Test of Error", Category.Error);
-            
             PageData      = new MessageLogViewModel();
             SearchOptions = new SearchOptions();
+            
+            SetDeleteImageSource("Delete.png");
+            SetSearchImageSource("baseline_search_black_48.png"); 
+            SetReorderButtonImage("baseline_swap_vert_black_18.png");
             
             InitializeComponent();
             
@@ -35,6 +40,27 @@ namespace Avails.Xamarin.Views.LoggingPage
             LoadLogFile();
         }
 
+        public void SetDeleteImageSource(string imageName)
+        {
+            ClearLogToolbarItem.IconImageSource = GetImageSource(imageName);
+        }
+
+        public void SetSearchImageSource(string imageName)
+        {
+            ShowSearchToolbarItem.IconImageSource = GetImageSource(imageName);
+        }
+
+        public void SetReorderButtonImage(string imageName)
+        {
+            ReorderButton.Source = GetImageSource(imageName);
+        }
+        
+        private ImageSource GetImageSource(string imageName)
+        {
+            return ImageSource.FromResource(imageName
+                                          , typeof(MessageLog).GetTypeInfo()
+                                                              .Assembly);
+        }
         private void LoadLogFile()
         {
             Title            = GetTitleText();
@@ -45,33 +71,33 @@ namespace Avails.Xamarin.Views.LoggingPage
             SearchOptions.SearchTerm = SearchEditor.Text;
             
             // LogContents.Text = Logger.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
+            var          logContents       = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
             
-            LogContents.HtmlText = Logger.Logger.ToggleLogListOrderByTimeStampAsSting(SearchOptions) ?? string.Empty;
-
+            LogContents.HtmlText = logContents;
         }
 
         private static string GetTitleText()
         {
-            return $"Log size: {FileSizeFormatter.FormatSize(Logger.Logger.GetLogFileSizeInBytes())}";
+            return $"Log size: {FileSizeFormatter.FormatSize(Log.GetLogFileSizeInBytes())}";
         }
 
         private void ClearLogToolbarItem_OnClicked(object    sender
                                                  , EventArgs e)
         {
-            Logger.Logger.Clear();
+            LogContents.HtmlText = Log.Clear();
         }
 
         private void LogDescending_OnClicked(object    sender
                                            , EventArgs e)
         {
-            LogContents.HtmlText = Logger.Logger.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
+            LogContents.HtmlText = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
         }
 
         private void SearchEditor_OnTextChanged(object               sender
                                               , TextChangedEventArgs e)
         {
             SearchOptions.SearchTerm = e.NewTextValue;
-            LogContents.HtmlText     = Logger.Logger.SearchLog(SearchOptions);
+            LogContents.HtmlText     = Log.SearchLog(SearchOptions);
         }
 
         private void ShowSize_OnClicked(object    sender
@@ -81,27 +107,25 @@ namespace Avails.Xamarin.Views.LoggingPage
             ShowSize.Text           = ShowLogSizeWarning;
         }
         
-        
-        
         private void FilterErrorsCheckbox_OnStateChanged(object                sender
                                                        , StateChangedEventArgs e)
         {
             SearchOptions.ShowErrors = FilterErrorsCheckbox.IsChecked ?? false;
-            LogContents.HtmlText     = Logger.Logger.SearchLog(SearchOptions);
+            LogContents.HtmlText     = Log.SearchLog(SearchOptions);
         }
 
         private void FilterWarningsCheckbox_OnStateChanged(object                sender
                                                          , StateChangedEventArgs e)
         {
             SearchOptions.ShowWarnings = FilterWarningsCheckbox.IsChecked ?? false;
-            LogContents.HtmlText       = Logger.Logger.SearchLog(SearchOptions);
+            LogContents.HtmlText       = Log.SearchLog(SearchOptions);
         }
 
         private void FilterInformationCheckbox_OnStateChanged(object                sender
                                                             , StateChangedEventArgs e)
         {
             SearchOptions.ShowInformation = FilterInformationCheckbox.IsChecked ?? false;
-            LogContents.HtmlText          = Logger.Logger.SearchLog(SearchOptions);
+            LogContents.HtmlText          = Log.SearchLog(SearchOptions);
         }
 
         private void ShowSearchToolbarItem_OnClicked(object    sender

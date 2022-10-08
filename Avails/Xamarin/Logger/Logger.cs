@@ -22,7 +22,7 @@ namespace Avails.Xamarin.Logger
         public static bool          WriteToFile    { get; set; }
         public static bool          WriteToToast   { get; set; }
         public static bool          WriteToLogCat  { get; set; }
-        public static bool          Verbose        { get; }
+        public static bool          Verbose        { get; set; }
         public static string        FullLogPath    { get; }
         public static StringBuilder Log            { get; }
         public static string        CompleteLog
@@ -34,6 +34,8 @@ namespace Avails.Xamarin.Logger
 
         private static bool Ascending { get; set; }
         private static string Serialize(List<LogLine> list) => JsonConvert.SerializeObject(list);
+
+        private const string LogIsEmpty = "Log is empty";
         
         static Logger()
         {
@@ -43,10 +45,12 @@ namespace Avails.Xamarin.Logger
             WriteToConsole = false;
             WriteToFile    = true;
             WriteToToast   = false;
-            WriteToLogCat  = false;
+            WriteToLogCat  = true;
             Verbose        = false;
             Ascending      = true;
-            FullLogPath    = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Logger.txt");
+            FullLogPath    = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder
+                                                                               .LocalApplicationData)
+                                        , "Logger.txt");
 
             var fileContents = GetFileContents();
             LogList   = Deserialize(fileContents);
@@ -176,35 +180,31 @@ namespace Avails.Xamarin.Logger
 
             foreach (var line in list)
             {
-                // if (line.Category == Category.Error)
-                // {
-                //     line. = line..Replace("[Error]"
-                //                                     , "<p style=\"color:red\">[Error]</p>");
-                // }
-                //
-                // if (line..Contains("[Warning]"))
-                // {
-                //     line. = line..Replace("[Warning]"
-                //                                     , "<p style=\"color:yellow\">[Warning]</p>");
-                // }
-                //
-                // if (line..Contains("[Information]"))
-                // {
-                //     line. = line..Replace("[Information]"
-                //                                     , $"<p style=\"color:green\">[Information]</p>");
-                // }
                 log.AppendLine(line.ToString(true));
             }
-            
 
-            return log.ToString();
+            return log.Length == 0 
+                        ? LogIsEmpty
+                        : log.ToString();
         }
 
         public static string GetFileContents()
         {
-            return File.Exists(FullLogPath) ? 
-                      File.ReadAllText(FullLogPath) 
-                    : string.Empty;
+            string fileContents;
+
+            try
+            {
+                fileContents= File.Exists(FullLogPath) 
+                                ? File.ReadAllText(FullLogPath) 
+                                : string.Empty;
+            }
+            catch (Exception e)
+            {
+                WriteLine(e.Message, Category.Error, e);
+                return string.Empty;
+            }
+
+            return fileContents;
         }
 
         public static long GetLogFileSizeInBytes()
@@ -370,13 +370,10 @@ namespace Avails.Xamarin.Logger
         {
             if (WriteToLogCat)
             {
-                //ex = ex ?? new Exception();
-
-                //BENDO:  Implement in Android (see PersonalTrainerWorkouts for example)
-                //DependencyService.Get<IMessage>()
-                //                 .Log(ConvertCategoryToLogLevel(category)
-                //                    , completeLogMessage
-                //                    , ex);
+                DependencyService.Get<IMessage>()
+                                 .Log(ConvertCategoryToLogLevel(category)
+                                    , completeLogMessage
+                                    , new Exception(exceptionMessage));
             }
         }
 
@@ -443,12 +440,16 @@ namespace Avails.Xamarin.Logger
             }
         }
 
-        public static void Clear()
+        public static string Clear()
         {
             Log.Clear();
+            
             CompleteLog = string.Empty;
+            
             File.Delete(FullLogPath);
             File.Create(FullLogPath);
+
+            return LogIsEmpty;
         }
 
         public static string SearchLog(SearchOptions options)
