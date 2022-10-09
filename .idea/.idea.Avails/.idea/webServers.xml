@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="7258de99-8d84-4fcd-b41a-6cbcebe1d102" name="Local" url="https://github.com/bkins/Avails/releases/tag/1.0.1">
+        <fileTransfer accessType="LOCAL" port="0" />
+      </webServer>
+    </option>
+  </component>
+</project>
