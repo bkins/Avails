@@ -13,9 +13,6 @@ namespace Avails.Xamarin.Views.LoggingPage
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MessageLog : ContentPage
     {
-        public ImageSource image { get; set; }
-        public ImageSource SearchImage { get; set; }
-
         private MessageLogViewModel PageData      { get; set; }
         private SearchOptions       SearchOptions { get; set; }
         
@@ -29,15 +26,25 @@ namespace Avails.Xamarin.Views.LoggingPage
             PageData      = new MessageLogViewModel();
             SearchOptions = new SearchOptions();
             
-            SetDeleteImageSource("Delete.png");
-            SetSearchImageSource("baseline_search_black_48.png"); 
-            SetReorderButtonImage("baseline_swap_vert_black_18.png");
+            //These require implementing IMessage for UWP and Android
+            Log.WriteToLogCat = false;
+            Log.WriteToToast  = false;
             
+            Log.WriteLine("Loading MessageLog page...", Category.Information);
+            
+            // SetDeleteImageSource("Avails/Xamarin/Resources/Drawable/Delete.png");
+            // SetSearchImageSource("Avails/Xamarin/Resources/Drawable/baseline_search_black_48.png"); 
+            // SetReorderButtonImage("Avails/Xamarin/Resources/Drawable/baseline_swap_vert_black_18.png");
+            //
             InitializeComponent();
             
             BindingContext = PageData;
             
+            Log.WriteLine("MessageLog page is loaded.", Category.Information);
+            Log.WriteLine($"Right now is: {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}"
+                        , Category.Information);
             LoadLogFile();
+
         }
 
         public void SetDeleteImageSource(string imageName)

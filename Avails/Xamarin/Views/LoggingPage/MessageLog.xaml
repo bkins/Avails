@@ -18,9 +18,11 @@
     <ContentPage.ToolbarItems>
         
         <ToolbarItem x:Name="ShowSearchToolbarItem"
+                     IconImageSource="baseline_search_black_48.png"
                      Clicked="ShowSearchToolbarItem_OnClicked"
                      />
         <ToolbarItem x:Name="ClearLogToolbarItem"
+                     IconImageSource="Delete.png"
                      Clicked="ClearLogToolbarItem_OnClicked"
                      />
         <ToolbarItem x:Name="ShowSize"
@@ -47,7 +49,7 @@
                 <ImageButton x:Name="ReorderButton"
                              Grid.Column="0"
                              Grid.Row="0"
-                             
+                             Source="baseline_swap_vert_black_18.png"
                              BackgroundColor="Transparent"
                              Clicked="LogDescending_OnClicked" 
                              />

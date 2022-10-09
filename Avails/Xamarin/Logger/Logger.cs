@@ -35,7 +35,7 @@ namespace Avails.Xamarin.Logger
         private static bool Ascending { get; set; }
         private static string Serialize(List<LogLine> list) => JsonConvert.SerializeObject(list);
 
-        private const string LogIsEmpty = "Log is empty";
+        private const string LogIsEmpty = "Log is empty or there are not entries that match your search criteria.";
         
         static Logger()
         {
