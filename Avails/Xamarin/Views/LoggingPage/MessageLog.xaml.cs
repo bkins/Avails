@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Reflection;
+using System.Threading;
 using Avails.D_Flat;
 using Avails.Xamarin.Logger;
 using Syncfusion.XForms.Buttons;
+using Xamarin.Essentials;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 using Log = Avails.Xamarin.Logger.Logger;
@@ -43,7 +45,10 @@ namespace Avails.Xamarin.Views.LoggingPage
             Log.WriteLine("MessageLog page is loaded.", Category.Information);
             Log.WriteLine($"Right now is: {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}"
                         , Category.Information);
-            LoadLogFile();
+
+            ThreadPool.QueueUserWorkItem(o => LoadLogFile());
+            
+            //LoadLogFile();
 
         }
 
@@ -70,17 +75,16 @@ namespace Avails.Xamarin.Views.LoggingPage
         }
         private void LoadLogFile()
         {
-            Title            = GetTitleText();
-            ShowSize.Text    = ShowLogSizeWarning;
+            Title = GetTitleText();
             
-            //string logContents = Logger.ToggleLogListOrderByTimeStampAsSting(SearchEditor.Text);
-
-            SearchOptions.SearchTerm = SearchEditor.Text;
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                ShowSize.Text            = ShowLogSizeWarning;
+                SearchOptions.SearchTerm = SearchEditor.Text;
+            });
             
-            // LogContents.Text = Logger.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
-            var          logContents       = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
-            
-            LogContents.HtmlText = logContents;
+            var logContents = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
+            MainThread.BeginInvokeOnMainThread(() => { LogContents.HtmlText = logContents; });
         }
 
         private static string GetTitleText()
