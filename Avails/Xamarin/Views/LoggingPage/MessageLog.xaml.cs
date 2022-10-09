@@ -25,6 +25,15 @@ namespace Avails.Xamarin.Views.LoggingPage
 
         public MessageLog()
         {
+            ThreadPool.QueueUserWorkItem(o => LoadMessagePageData());
+            
+            InitializeComponent();
+            
+            BindingContext = PageData;
+        }
+        
+        private void LoadMessagePageData()
+        {
             PageData      = new MessageLogViewModel();
             SearchOptions = new SearchOptions();
             
@@ -34,24 +43,26 @@ namespace Avails.Xamarin.Views.LoggingPage
             
             Log.WriteLine("Loading MessageLog page...", Category.Information);
             
-            // SetDeleteImageSource("Avails/Xamarin/Resources/Drawable/Delete.png");
-            // SetSearchImageSource("Avails/Xamarin/Resources/Drawable/baseline_search_black_48.png"); 
-            // SetReorderButtonImage("Avails/Xamarin/Resources/Drawable/baseline_swap_vert_black_18.png");
-            //
-            InitializeComponent();
+            Title = GetTitleText();
             
-            BindingContext = PageData;
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                ShowSize.Text            = ShowLogSizeWarning;
+                SearchOptions.SearchTerm = SearchEditor.Text;
+            });
+            
+            var logContents = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                LogContents.HtmlText = logContents;
+            });
             
             Log.WriteLine("MessageLog page is loaded.", Category.Information);
             Log.WriteLine($"Right now is: {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}"
                         , Category.Information);
 
-            ThreadPool.QueueUserWorkItem(o => LoadLogFile());
-            
-            //LoadLogFile();
-
         }
-
+        
         public void SetDeleteImageSource(string imageName)
         {
             ClearLogToolbarItem.IconImageSource = GetImageSource(imageName);
@@ -72,19 +83,6 @@ namespace Avails.Xamarin.Views.LoggingPage
             return ImageSource.FromResource(imageName
                                           , typeof(MessageLog).GetTypeInfo()
                                                               .Assembly);
-        }
-        private void LoadLogFile()
-        {
-            Title = GetTitleText();
-            
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                ShowSize.Text            = ShowLogSizeWarning;
-                SearchOptions.SearchTerm = SearchEditor.Text;
-            });
-            
-            var logContents = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
-            MainThread.BeginInvokeOnMainThread(() => { LogContents.HtmlText = logContents; });
         }
 
         private static string GetTitleText()
