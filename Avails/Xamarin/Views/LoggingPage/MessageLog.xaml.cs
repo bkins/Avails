@@ -106,9 +106,17 @@ namespace Avails.Xamarin.Views.LoggingPage
                                               , TextChangedEventArgs e)
         {
             SearchOptions.SearchTerm = e.NewTextValue;
-            LogContents.HtmlText     = Log.SearchLog(SearchOptions);
+            
+            LogContents.HtmlText = GetLogContents();
         }
 
+        private string GetLogContents()
+        {
+            var logContents = string.Empty;
+            ThreadPool.QueueUserWorkItem(o => logContents = Log.SearchLog(SearchOptions));
+
+            return logContents;
+        }
         private void ShowSize_OnClicked(object    sender
                                       , EventArgs e)
         {
@@ -120,7 +128,7 @@ namespace Avails.Xamarin.Views.LoggingPage
                                                        , StateChangedEventArgs e)
         {
             SearchOptions.ShowErrors = FilterErrorsCheckbox.IsChecked ?? false;
-            LogContents.HtmlText     = Log.SearchLog(SearchOptions);
+            LogContents.HtmlText     = GetLogContents();
         }
 
         private void FilterWarningsCheckbox_OnStateChanged(object                sender
@@ -134,7 +142,7 @@ namespace Avails.Xamarin.Views.LoggingPage
                                                             , StateChangedEventArgs e)
         {
             SearchOptions.ShowInformation = FilterInformationCheckbox.IsChecked ?? false;
-            LogContents.HtmlText          = Log.SearchLog(SearchOptions);
+            LogContents.HtmlText          = GetLogContents();
         }
 
         private void ShowSearchToolbarItem_OnClicked(object    sender

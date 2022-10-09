@@ -5,7 +5,7 @@
     <LangVersion>8</LangVersion>
     <UserSecretsId>6ee4264b-b79e-4397-98ef-af7be7f32e78</UserSecretsId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageVersion>1.0.3</PackageVersion>
+    <PackageVersion>1.0.4</PackageVersion>
     <Title>Avails</Title>
     <Authors>Bkins</Authors>
     <Description>Common utilities amongst all my android and .net solutions </Description>
