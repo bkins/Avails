@@ -10,7 +10,6 @@
     <Authors>Bkins</Authors>
     <Description>Common utilities amongst all my android and .net solutions </Description>
     <Copyright>2022</Copyright>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
