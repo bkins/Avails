@@ -9,8 +9,7 @@ namespace TestClient.Xamarin
         {
             InitializeComponent();
 
-            Routing.RegisterRoute(nameof(MessageLog)
-                      ,           typeof(MessageLog));
+            Routing.RegisterRoute(nameof(MessageLog), typeof(MessageLog));
 
         }
     }

@@ -25,9 +25,37 @@ namespace Avails.Xamarin.Views.LoggingPage
 
         public MessageLog()
         {
-            ThreadPool.QueueUserWorkItem(o => LoadMessagePageData());
+            //ThreadPool.QueueUserWorkItem(o => LoadMessagePageData());
+            SearchOptions = new SearchOptions();
             
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception e)
+            {
+                Log.WriteLine($"Could not Initialize Components, because {e.Message}"
+                            , Category.Error
+                            , e);
+            }
+            
+            PageData      = new MessageLogViewModel();
+            SearchOptions = new SearchOptions();
+            
+            Log.WriteLine("Loading MessageLog page...", Category.Information);
+            
+            Title = GetTitleText();
+            
+            ShowSize.Text            = ShowLogSizeWarning;
+            SearchOptions.SearchTerm = SearchEditor.Text;
+                
+            var logContents = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
+            
+            LogContents.HtmlText = logContents;
+            
+            Log.WriteLine("MessageLog page is loaded.", Category.Information);
+            Log.WriteLine($"Right now is: {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}"
+                        , Category.Information);
             
             BindingContext = PageData;
         }

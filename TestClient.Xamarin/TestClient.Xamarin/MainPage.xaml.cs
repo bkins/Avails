@@ -1,6 +1,7 @@
 ﻿using System;
 using Avails.Xamarin;
 using Avails.Xamarin.Logger;
+using Avails.Xamarin.Views.LoggingPage;
 using Xamarin.Forms;
 
 namespace TestClient.Xamarin
@@ -15,14 +16,19 @@ namespace TestClient.Xamarin
         private async void MessageLogButton_OnClicked(object    sender
                                               , EventArgs e)
         {
-            var messageLagPageName = nameof(Avails.Xamarin.Views.LoggingPage.MessageLog);
+            //These require implementing IMessage for UWP and Android
+            Logger.WriteToLogCat = false;
+            Logger.WriteToToast  = false;
+            
+            const string messageLogName = nameof(MessageLog);
+            
             try
             {
-                await PageNavigation.NavigateTo(messageLagPageName);
+                await PageNavigation.NavigateTo(messageLogName).ConfigureAwait(false);
             }
             catch (Exception exception)
             {
-                Logger.WriteLine($"Error occured while trying to load {messageLagPageName}", Category.Error, exception);
+                Logger.WriteLine($"Error occured while trying to load {messageLogName}", Category.Error, exception);
             }
         }
     }

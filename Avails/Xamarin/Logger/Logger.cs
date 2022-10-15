@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Avails.D_Flat.Extensions;
 using Avails.Xamarin.Interfaces;
 using Newtonsoft.Json;
@@ -17,14 +18,15 @@ namespace Avails.Xamarin.Logger
     public static class Logger
     {
         //BENDO: Implement a settings page to handle the setting of these values (or at least the ones that are appropriate)
-        public static bool          WriteToOutput  { get; set; }
-        public static bool          WriteToConsole { get; set; }
-        public static bool          WriteToFile    { get; set; }
-        public static bool          WriteToToast   { get; set; }
-        public static bool          WriteToLogCat  { get; set; }
-        public static bool          Verbose        { get; set; }
-        public static string        FullLogPath    { get; }
-        public static StringBuilder Log            { get; }
+        public static  bool          WriteToOutput               { get; set; }
+        public static  bool          WriteToConsole              { get; set; }
+        public static  bool          WriteToFile                 { get; set; }
+        public static  bool          WriteToToast                { get; set; }
+        private static bool          WriteLineToToastForcedNotAllowed { get; set; }
+        public static  bool          WriteToLogCat               { get; set; }
+        public static  bool          Verbose                     { get; set; }
+        public static  string        FullLogPath                 { get; }
+        public static  StringBuilder Log                         { get; }
         public static string        CompleteLog
         {
             get => Log.ToString();
@@ -39,21 +41,22 @@ namespace Avails.Xamarin.Logger
         
         static Logger()
         {
-            Log            = new StringBuilder();
-            LogList        = new List<LogLine>();
-            WriteToOutput  = false;
-            WriteToConsole = false;
-            WriteToFile    = true;
-            WriteToToast   = false;
-            WriteToLogCat  = true;
-            Verbose        = false;
-            Ascending      = true;
-            FullLogPath    = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder
-                                                                               .LocalApplicationData)
-                                        , "Logger.txt");
+            LogList                     = new List<LogLine>();
+            WriteToOutput               = false;
+            WriteToConsole              = false;
+            WriteToFile                 = true;
+            WriteToToast                = false;
+            WriteToLogCat               = true;
+            WriteLineToToastForcedNotAllowed = false;
+            Verbose                     = false;
+            Ascending                   = true;
+            FullLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder
+                                                                            .LocalApplicationData)
+                                     , "Logger.txt");
 
-            var fileContents = GetFileContents();
-            LogList   = Deserialize(fileContents);
+            Log         = new StringBuilder(GetFileContents());
+            CompleteLog = Log.ToString();
+            LogList     = Deserialize(CompleteLog);
         }
 
         private static List<LogLine> LegacyLogFileToList(string fileContents)
@@ -99,6 +102,7 @@ namespace Avails.Xamarin.Logger
                 ? ToListOrderedByTimeStampDescending(options)
                 : ToListOrderedByTimeStampAscending(options);
         }
+        
         private static string ToStringOrderedByTimeStampDescending(SearchOptions options)
         {
             Ascending = ! Ascending;
@@ -164,14 +168,22 @@ namespace Avails.Xamarin.Logger
 
         private static List<LogLine> Deserialize(string json)
         {
-            return json.IsValidJson() ? 
-                          JsonConvert.DeserializeObject<List<LogLine>>(json) 
+            return json.IsValidJson() 
+                        ? JsonConvert.DeserializeObject<List<LogLine>>(json) 
                         : LegacyLogFileToList(json);
         }
 
-        public static List<LogLine> ToList()
+        public static List<LogLine> ToList(bool forceRefresh = false)
         {
-            return Deserialize(GetFileContents());
+            if ( ! forceRefresh) { return LogList; }
+            
+            var task = Task.Factory.StartNew(() => Deserialize(GetFileContents()));
+            
+            Task.WaitAll();
+            
+            return task.Result;
+            
+            //return Deserialize(GetFileContents());
         }
 
         private static string ListToString(List<LogLine> list)
@@ -220,6 +232,12 @@ namespace Avails.Xamarin.Logger
                                                 , Category  category
                                                 , Exception ex = null)
         {
+            if (WriteLineToToastForcedNotAllowed)
+            {
+                WriteLine($"An attempt was made to force the log message to Toast, but is not allowed. {nameof(WriteLineToToastForcedNotAllowed)}: {WriteLineToToastForcedNotAllowed}"
+                        , Category.Warning);
+                return;
+            }
             var setting = WriteToToast;
 
             WriteToToast = true;
@@ -285,9 +303,23 @@ namespace Avails.Xamarin.Logger
         {
             if ( ! WriteToToast) return;
 
-            //BENDO: Implement for UWP 
-            DependencyService.Get<IMessage>()
-                             .ShortAlert(completeLogMessage);
+            try
+            {
+                DependencyService.Get<IMessage>()
+                                 .ShortAlert(completeLogMessage);
+            }
+            catch (Exception e)
+            {
+                WriteToToast                     = false;
+                WriteLineToToastForcedNotAllowed = true;
+                
+                WriteLine($"Could send previous message to toast, because: {e.Message}"
+                        , Category.Error
+                        , e);
+                
+                Console.WriteLine(e);
+                
+            }
         }
 
         private static void LogToFile()
@@ -370,25 +402,36 @@ namespace Avails.Xamarin.Logger
         {
             if (WriteToLogCat)
             {
-                DependencyService.Get<IMessage>()
-                                 .Log(ConvertCategoryToLogLevel(category)
-                                    , completeLogMessage
-                                    , new Exception(exceptionMessage));
+                try
+                {
+                    DependencyService.Get<IMessage>()
+                                     .Log(ConvertCategoryToLogLevel(category)
+                                        , completeLogMessage
+                                        , new Exception(exceptionMessage));
+                }
+                catch (Exception e)
+                {
+                    WriteToLogCat = false;
+
+                    WriteLine($"An attempt to log to the Android LogCat failed, becuase: {e.Message}"
+                            , Category.Error
+                            , e);
+                    
+                    Console.WriteLine(e);
+                }
             }
         }
 
         private static string LogVerboseInfo(Exception ex)
         {
-            string message;
-            
-            if (Verbose && ex != null)
+            if (ex.InnerException != null)
             {
-                message = $"{ex.Message}{Environment.NewLine}{ex.StackTrace}";
+                LogVerboseInfo(ex.InnerException);
             }
-            else
-            {
-                message = ex?.Message;
-            }
+
+            var message = Verbose 
+                ? $"{ex.Message}{Environment.NewLine}{ex.StackTrace}" 
+                : ex?.Message;
 
             Log.AppendLine(message);
 
@@ -455,14 +498,15 @@ namespace Avails.Xamarin.Logger
         public static string SearchLog(SearchOptions options)
         {
 
-            var resultsList = LogList.Where(fields =>  FilterBySearchTerm(options
-                                                                        , fields)
-                                                    && FilterOptionsByCategory(options
-                                                                             , fields))
+            var resultsList = LogList.Where(fields => FilterBySearchTerm(options
+                                                                       , fields)
+                                                   && FilterOptionsByCategory(options
+                                                                            , fields))
                                      .ToList();
 
             return ListToString(resultsList);
         }
+        
         public static Category GetEnum(string enumName)
         {
             return enumName switch
@@ -472,8 +516,6 @@ namespace Avails.Xamarin.Logger
               , nameof(Category.Information) => Category.Information
               , _ => Category.Unknown
             };
-
-            ;
         }
     }
 
