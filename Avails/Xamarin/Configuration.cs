@@ -61,6 +61,44 @@ namespace Avails.Xamarin
             set => Preferences.Set(nameof(RequestedEntryTextHeight)
                                  , value);
         }
+
+        #region Notifications
+
+        
+        public static int NotificationInterval
+        {
+            get => Preferences.Get(nameof(NotificationSettings.Interval)
+                                 , 0);
+            set => Preferences.Set(nameof(NotificationInterval)
+                                 , value);
+        }
+
+        public static string NotificationTitle
+        {
+            get => Preferences.Get(nameof(NotificationSettings.Title)
+                                 , string.Empty);
+            set => Preferences.Set(nameof(NotificationSettings.Title)
+                                 , value);
+        }
+
+        public static string NotificationMessage
+        {
+            get => Preferences.Get(nameof(NotificationSettings.Message)
+                                 , string.Empty);
+            set => Preferences.Set(nameof(NotificationSettings.Message)
+                                 , value);
+        }
+
+        #endregion
+
+        private struct NotificationSettings
+        {
+            public static string Message  { get; set; }
+            public static string Title    { get; set; }
+            public static int    Interval { get; set; }
+
+        }
     }
-    
 }
+
+

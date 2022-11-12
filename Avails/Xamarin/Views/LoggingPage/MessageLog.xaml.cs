@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using System.Threading;
 using Avails.D_Flat;
 using Avails.Xamarin.Logger;
 using Syncfusion.XForms.Buttons;
@@ -10,7 +9,7 @@ using Xamarin.Forms.Xaml;
 using Log = Avails.Xamarin.Logger.Logger;
 using static Avails.Xamarin.Configuration;
 
-namespace Avails.Xamarin.Views.LoggingPage
+namespace Avails.Xamarin.Views.LoggingPage 
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class MessageLog : ContentPage
@@ -23,8 +22,12 @@ namespace Avails.Xamarin.Views.LoggingPage
             get => NeverShowLogSizeWarning ? "s" : "S";
         }
 
+        private bool PageLoading = true;
+        
         public MessageLog()
         {
+            if ( ! PageLoading) { return; }
+            
             //ThreadPool.QueueUserWorkItem(o => LoadMessagePageData());
             SearchOptions = new SearchOptions();
             
@@ -58,6 +61,8 @@ namespace Avails.Xamarin.Views.LoggingPage
                         , Category.Information);
             
             BindingContext = PageData;
+
+            PageLoading = false;
         }
         
         private void LoadMessagePageData()
@@ -121,18 +126,24 @@ namespace Avails.Xamarin.Views.LoggingPage
         private void ClearLogToolbarItem_OnClicked(object    sender
                                                  , EventArgs e)
         {
+            if (PageLoading) { return; }
+
             LogContents.HtmlText = Log.Clear();
         }
 
         private void LogDescending_OnClicked(object    sender
                                            , EventArgs e)
         {
+            if (PageLoading) { return; }
+
             LogContents.HtmlText = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
         }
 
         private void SearchEditor_OnTextChanged(object               sender
                                               , TextChangedEventArgs e)
         {
+            if (PageLoading) { return; }
+
             SearchOptions.SearchTerm = e.NewTextValue;
             
             LogContents.HtmlText = GetLogContents();
@@ -140,14 +151,18 @@ namespace Avails.Xamarin.Views.LoggingPage
 
         private string GetLogContents()
         {
-            var logContents = string.Empty;
-            ThreadPool.QueueUserWorkItem(o => logContents = Log.SearchLog(SearchOptions));
+            var logContents = Log.SearchLog(SearchOptions);
+            
+            // var logContents = string.Empty;
+            // ThreadPool.QueueUserWorkItem(o => logContents = Log.SearchLog(SearchOptions));
 
             return logContents;
         }
         private void ShowSize_OnClicked(object    sender
                                       , EventArgs e)
         {
+            if (PageLoading) { return; }
+
             NeverShowLogSizeWarning = ! NeverShowLogSizeWarning;
             ShowSize.Text           = ShowLogSizeWarning;
         }
@@ -155,6 +170,8 @@ namespace Avails.Xamarin.Views.LoggingPage
         private void FilterErrorsCheckbox_OnStateChanged(object                sender
                                                        , StateChangedEventArgs e)
         {
+            if (PageLoading) { return; }
+
             SearchOptions.ShowErrors = FilterErrorsCheckbox.IsChecked ?? false;
             LogContents.HtmlText     = GetLogContents();
         }
@@ -162,6 +179,8 @@ namespace Avails.Xamarin.Views.LoggingPage
         private void FilterWarningsCheckbox_OnStateChanged(object                sender
                                                          , StateChangedEventArgs e)
         {
+            if (PageLoading) { return; }
+
             SearchOptions.ShowWarnings = FilterWarningsCheckbox.IsChecked ?? false;
             LogContents.HtmlText       = Log.SearchLog(SearchOptions);
         }
@@ -169,6 +188,8 @@ namespace Avails.Xamarin.Views.LoggingPage
         private void FilterInformationCheckbox_OnStateChanged(object                sender
                                                             , StateChangedEventArgs e)
         {
+            if (PageLoading) { return; }
+
             SearchOptions.ShowInformation = FilterInformationCheckbox.IsChecked ?? false;
             LogContents.HtmlText          = GetLogContents();
         }
@@ -176,6 +197,8 @@ namespace Avails.Xamarin.Views.LoggingPage
         private void ShowSearchToolbarItem_OnClicked(object    sender
                                                    , EventArgs e)
         {
+            if (PageLoading) { return; }
+            
             PageData.ShowSearchOptions          = ! PageData.ShowSearchOptions;
             
             SearchAndOrderGrid.IsVisible        = PageData.ShowSearchOptions;
