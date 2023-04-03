@@ -2,6 +2,7 @@
 using System.Reflection;
 using Avails.D_Flat;
 using Avails.Xamarin.Logger;
+using Syncfusion.ListView.XForms;
 using Syncfusion.XForms.Buttons;
 using Xamarin.Essentials;
 using Xamarin.Forms;
@@ -28,7 +29,6 @@ namespace Avails.Xamarin.Views.LoggingPage
         {
             if ( ! PageLoading) { return; }
             
-            //ThreadPool.QueueUserWorkItem(o => LoadMessagePageData());
             SearchOptions = new SearchOptions();
             
             try
@@ -42,29 +42,40 @@ namespace Avails.Xamarin.Views.LoggingPage
                             , e);
             }
             
-            PageData      = new MessageLogViewModel();
-            SearchOptions = new SearchOptions();
+        }
+
+        protected override void OnAppearing()
+        {
+            PageLoading = true;
             
-            Log.WriteLine("Loading MessageLog page...", Category.Information);
+            base.OnAppearing();
             
-            Title = GetTitleText();
+            LoadMessagePageData();
             
-            ShowSize.Text            = ShowLogSizeWarning;
-            SearchOptions.SearchTerm = SearchEditor.Text;
-                
-            var logContents = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
-            
-            LogContents.HtmlText = logContents;
-            
-            Log.WriteLine("MessageLog page is loaded.", Category.Information);
-            Log.WriteLine($"Right now is: {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}"
-                        , Category.Information);
-            
+            // PageData      = new MessageLogViewModel();
+            // SearchOptions = new SearchOptions();
+            //
+            // Title = GetTitleText();
+            //
+            // ShowSize.Text            = ShowLogSizeWarning;
+            // SearchOptions.SearchTerm = SearchEditor.Text;
+            //     
+            // var logContents = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
+            //
+            // LogContents.HtmlText = logContents;
+            //
             BindingContext = PageData;
 
-            PageLoading = false;
+            Log.Ascending        = true;
+            
+            ListView.IsVisible   = true;
+            ListView.ItemsSource = Log.ToggleLogListOrderByTimeStamp(SearchOptions);
+            
+            PageLoading          = false;
+
+            //
+            // ListView.ItemsSource = PageData.LogAsList;
         }
-        
         private void LoadMessagePageData()
         {
             PageData      = new MessageLogViewModel();
@@ -74,8 +85,6 @@ namespace Avails.Xamarin.Views.LoggingPage
             Log.WriteToLogCat = false;
             Log.WriteToToast  = false;
             
-            Log.WriteLine("Loading MessageLog page...", Category.Information);
-            
             Title = GetTitleText();
             
             MainThread.BeginInvokeOnMainThread(() =>
@@ -83,17 +92,26 @@ namespace Avails.Xamarin.Views.LoggingPage
                 ShowSize.Text            = ShowLogSizeWarning;
                 SearchOptions.SearchTerm = SearchEditor.Text;
             });
-            
-            var logContents = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                LogContents.HtmlText = logContents;
-            });
-            
-            Log.WriteLine("MessageLog page is loaded.", Category.Information);
-            Log.WriteLine($"Right now is: {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}"
-                        , Category.Information);
 
+            //string logContents = "Loading...";
+
+            //
+            // var task = Task.FromResult(Task.Run(async () =>
+            // {
+            //     
+            // }));
+            
+            // logContents = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
+            // MainThread.BeginInvokeOnMainThread(() =>
+            // {
+            //     LogContents.HtmlText = logContents;
+            // });
+            //
+            //
+            // task.ContinueWith(t =>
+            // {
+            //     
+            // });
         }
         
         public void SetDeleteImageSource(string imageName)
@@ -126,17 +144,19 @@ namespace Avails.Xamarin.Views.LoggingPage
         private void ClearLogToolbarItem_OnClicked(object    sender
                                                  , EventArgs e)
         {
-            if (PageLoading) { return; }
-
-            LogContents.HtmlText = Log.Clear();
+            Log.Clear();
+            ListView.ItemsSource = null;
+            ListView.IsVisible   = false;
+            
+            Title = GetTitleText();
         }
 
         private void LogDescending_OnClicked(object    sender
                                            , EventArgs e)
         {
             if (PageLoading) { return; }
-
-            LogContents.HtmlText = Log.ToggleLogListOrderByTimeStampAsSting(SearchOptions);
+            
+            ListView.ItemsSource = Log.ToggleLogListOrderByTimeStamp(SearchOptions);
         }
 
         private void SearchEditor_OnTextChanged(object               sender
@@ -145,8 +165,8 @@ namespace Avails.Xamarin.Views.LoggingPage
             if (PageLoading) { return; }
 
             SearchOptions.SearchTerm = e.NewTextValue;
-            
-            LogContents.HtmlText = GetLogContents();
+
+            ListView.ItemsSource = Log.SearchLogAsList(SearchOptions);
         }
 
         private string GetLogContents()
@@ -173,7 +193,7 @@ namespace Avails.Xamarin.Views.LoggingPage
             if (PageLoading) { return; }
 
             SearchOptions.ShowErrors = FilterErrorsCheckbox.IsChecked ?? false;
-            LogContents.HtmlText     = GetLogContents();
+            ListView.ItemsSource     = Log.SearchLogAsList(SearchOptions);
         }
 
         private void FilterWarningsCheckbox_OnStateChanged(object                sender
@@ -182,7 +202,7 @@ namespace Avails.Xamarin.Views.LoggingPage
             if (PageLoading) { return; }
 
             SearchOptions.ShowWarnings = FilterWarningsCheckbox.IsChecked ?? false;
-            LogContents.HtmlText       = Log.SearchLog(SearchOptions);
+            ListView.ItemsSource       = Log.SearchLogAsList(SearchOptions);
         }
 
         private void FilterInformationCheckbox_OnStateChanged(object                sender
@@ -191,7 +211,7 @@ namespace Avails.Xamarin.Views.LoggingPage
             if (PageLoading) { return; }
 
             SearchOptions.ShowInformation = FilterInformationCheckbox.IsChecked ?? false;
-            LogContents.HtmlText          = GetLogContents();
+            ListView.ItemsSource          = Log.SearchLogAsList(SearchOptions);
         }
 
         private void ShowSearchToolbarItem_OnClicked(object    sender
@@ -199,12 +219,39 @@ namespace Avails.Xamarin.Views.LoggingPage
         {
             if (PageLoading) { return; }
             
-            PageData.ShowSearchOptions          = ! PageData.ShowSearchOptions;
+            SearchAndOrderGrid.IsVisible        = ! SearchAndOrderGrid.IsVisible;
+            FilterErrorsCheckbox.IsVisible      = ! FilterErrorsCheckbox.IsVisible;
+            FilterWarningsCheckbox.IsVisible    = ! FilterWarningsCheckbox.IsVisible;
+            FilterInformationCheckbox.IsVisible = ! FilterInformationCheckbox.IsVisible;
+        }
+
+        private void ListView_OnSelectionChanged(object                        sender
+                                               , ItemSelectionChangedEventArgs e)
+        {
+            var selected = (LogLine)ListView.SelectedItem;
+
+            // if (selected?.ExtraDetails is null)
+            //     return;
+            //ExtraDetailRte.InsertHTMLText(selected.ToString(formatAsHtml: true));
+            //ExtraDetailRte.HtmlText     = selected.ToString(formatAsHtml: true);
+            //ExtraDetailRte.Text         = selected.ToString();
+            // ExtraDetailRte.HtmlText         = selected.ToString(formatAsHtml: false);
+            // ExtraDetailRte.DefaultFontColor = Color.White;
+            ExtraDetailsEditor.Text      = selected.ToString(formatAsHtml: false);
             
-            SearchAndOrderGrid.IsVisible        = PageData.ShowSearchOptions;
-            FilterErrorsCheckbox.IsVisible      = PageData.ShowSearchOptions;
-            FilterWarningsCheckbox.IsVisible    = PageData.ShowSearchOptions;
-            FilterInformationCheckbox.IsVisible = PageData.ShowSearchOptions;
+            ListView.IsVisible           = false;
+            ExtraDetailsEditor.IsVisible = true;
+            DoneViewingButton.IsVisible  = true;
+
+        }
+
+        private void DoneViewingButton_OnClicked(object    sender
+                                               , EventArgs e)
+        {
+            ListView.IsVisible          = true;
+            //ExtraDetailRte.IsVisible    = false;
+            ExtraDetailsEditor.IsVisible = false;
+            DoneViewingButton.IsVisible  = false;
         }
     }
 }

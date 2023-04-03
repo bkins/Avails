@@ -8,12 +8,14 @@
 
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:viewmodel="clr-namespace:Avails.Xamarin.Views.LoggingPage;assembly=Avails"
+             xmlns:sfListview="clr-namespace:Syncfusion.ListView.XForms;assembly=Syncfusion.SfListView.XForms"
              xmlns:sfButtons="clr-namespace:Syncfusion.XForms.Buttons;assembly=Syncfusion.Buttons.XForms"
              xmlns:sfRte="clr-namespace:Syncfusion.XForms.RichTextEditor;assembly=Syncfusion.SfRichTextEditor.XForms"
-
-             x:Class="Avails.Xamarin.Views.LoggingPage.MessageLog"
-             x:DataType="viewmodel:MessageLogViewModel">
+             xmlns:local="clr-namespace:Avails.Xamarin.Logger"
+             xmlns:viewmodel="clr-namespace:Avails.Xamarin.Views.LoggingPage;assembly=Avails"
+             
+             x:Class="Avails.Xamarin.Views.LoggingPage.MessageLog">
+    <!-- x:DataType="viewmodel:MessageLogViewModel" -->
     
     <ContentPage.ToolbarItems>
         
@@ -31,19 +33,72 @@
                      />
         
     </ContentPage.ToolbarItems>
+    
+    <ContentPage.Resources>
+        
+        <ResourceDictionary>
+            <DataTemplate x:Name="ItemTemplate"
+                          x:Key="ItemTemplate"
+            >
+                <Grid x:Name="LogGrid"
+                      ColumnDefinitions="30*,65*,5*"
+                      RowDefinitions="Auto,Auto,Auto">
+                    
+                    <Label x:Name="CategoryHtmlLabel"
+                           Grid.Column="0"
+                           Grid.Row="0"
+                           TextType="Html"
+                           Text="{Binding CategoryAsHtml}"
+                           FontSize="Small"
+                           FontAttributes="Bold"
+                           Margin="10,0,0,0"/>
+                    <Label x:Name="TimeStampHtmlLabel"
+                           Grid.Column="1"
+                           Grid.Row="0"
+                           TextType="Html"
+                           Text="{Binding TimeStampAsHtml}"
+                           Margin="10,0,0,0"
+                           HorizontalOptions="End"/>
+                    <Label x:Name="ExtraLabel"
+                           Grid.Column="2"
+                           Grid.Row="0"
+                           Text="+"
+                           TextColor="White"
+                           IsVisible="{Binding HasExtraDetails}"
+                           />
+                    <Label x:Name="MessageLabel"
+                           Grid.Column="0"
+                           Grid.Row="1"
+                           Grid.ColumnSpan="3"
+                           TextType="Html"
+                           Text="{Binding MessageAsHtml}"
+                           Margin="10,0,0,0"/>
+                    <BoxView Grid.Row="3"   
+                             Grid.ColumnSpan="3"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             WidthRequest="400"
+                             HeightRequest="1"
+                             Color="Gray"
+                             Margin="10,0,10,0"/>
+                </Grid>
 
+            </DataTemplate>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
     <!-- <ScrollView> -->
 
         <Grid x:Name="PageControls"  
               ColumnDefinitions="25*, 30*, 38*"
-              RowDefinitions="Auto, Auto, 100*"
+              RowDefinitions="Auto, Auto, 100*, Auto"
               >
             <Grid x:Name="SearchAndOrderGrid"
                   ColumnDefinitions="15*, 85*"
                   Grid.Column="0"
                   Grid.Row="0"
                   Grid.ColumnSpan="3"
-                  IsVisible="{Binding ShowSearchOptions}"
+                  IsVisible="False"
                   >
                 <!-- Source="baseline_swap_vert_black_18.png" -->
                 <ImageButton x:Name="ReorderButton"
@@ -66,7 +121,7 @@
                                    Grid.Column="0"
                                    Grid.Row="1"
                                    StateChanged="FilterErrorsCheckbox_OnStateChanged"
-                                   IsVisible="{Binding ShowSearchOptions}"
+                                   IsVisible="False"
                                    IsChecked="True"
                                    />
             <sfButtons:SfCheckBox x:Name="FilterWarningsCheckbox"
@@ -75,7 +130,7 @@
                                    Grid.Row="1"
                                    HorizontalOptions="StartAndExpand"
                                    StateChanged="FilterWarningsCheckbox_OnStateChanged"
-                                   IsVisible="{Binding ShowSearchOptions}"
+                                   IsVisible="False"
                                    IsChecked="True"
                                    />
             <sfButtons:SfCheckBox x:Name="FilterInformationCheckbox"
@@ -84,24 +139,64 @@
                                    Grid.Row="1"
                                    HorizontalOptions="Start"
                                    StateChanged="FilterInformationCheckbox_OnStateChanged"
-                                   IsVisible="{Binding ShowSearchOptions}"
+                                   IsVisible="False"
                                    IsChecked="True"
                                    />
             
-            <sfRte:SfRichTextEditor x:Name="LogContents"
-                                    Grid.Column="0"
-                                    Grid.Row="2"
-                                    Grid.ColumnSpan="3"
-                                    BackgroundColor="Black"
-                                    DefaultFontColor="White"
-                                    DefaultFontSize="Micro"
-                                    WordWrap="Normal"
-                                    VerticalOptions="FillAndExpand"
-                                    HorizontalOptions="FillAndExpand"
-                                    ShowToolbar="False"
-                                    ReadOnly="True"
-                                    CursorPosition="0"
-                                    />
+            <sfListview:SfListView x:Name="ListView"
+                                   Grid.Column="0"
+                                   Grid.Row="2"
+                                   Grid.ColumnSpan="3"
+                                   BackgroundColor="Black"
+                                   SelectionBackgroundColor="MidnightBlue"
+                                   AutoFitMode="DynamicHeight"
+                                   VerticalOptions="Fill"
+                                   SelectionMode="Single"
+                                   AllowSwiping="True"
+                                   ItemTemplate="{StaticResource ItemTemplate}"
+                                   SelectionChanged="ListView_OnSelectionChanged"/>
+            <!-- <sfRte:SfRichTextEditor x:Name="ExtraDetailRte" -->
+            <!--                         Grid.Column="0" -->
+            <!--                         Grid.Row="2" -->
+            <!--                         Grid.ColumnSpan="3" -->
+            <!--                         VerticalOptions="Fill" -->
+            <!--                         IsVisible="False" -->
+            <!--                         ShowToolbar="True" -->
+            <!--                         BackgroundColor="Black" -->
+            <!--                         HeightRequest="350" -->
+            <!--                         /> -->
+            <Editor x:Name="ExtraDetailsEditor"
+                    Grid.Column="0"
+                    Grid.Row="2"
+                    Grid.ColumnSpan="3"
+                    VerticalOptions="Fill"
+                    IsVisible="False"
+                    BackgroundColor="Black"
+                    TextColor="White"
+                    IsReadOnly="True"
+                    
+            />
+            <Button x:Name="DoneViewingButton"
+                    Grid.Column="0"
+                    Grid.Row="3"
+                    Text="Done"
+                    Clicked="DoneViewingButton_OnClicked"
+                    IsVisible="False"/>
+            
+            <!-- <sfRte:SfRichTextEditor x:Name="LogContents" -->
+            <!--                         Grid.Column="0" -->
+            <!--                         Grid.Row="2" -->
+            <!--                         Grid.ColumnSpan="3" -->
+            <!--                         BackgroundColor="Black" -->
+            <!--                         DefaultFontColor="White" -->
+            <!--                         DefaultFontSize="Micro" -->
+            <!--                         WordWrap="Normal" -->
+            <!--                         VerticalOptions="FillAndExpand" -->
+            <!--                         HorizontalOptions="FillAndExpand" -->
+            <!--                         ShowToolbar="False" -->
+            <!--                         ReadOnly="True" -->
+            <!--                         CursorPosition="0" -->
+            <!--                         /> -->
             <!-- <ScrollView Grid.Column="0" -->
             <!--             Grid.Row="2" -->
             <!--             Grid.ColumnSpan="3" -->

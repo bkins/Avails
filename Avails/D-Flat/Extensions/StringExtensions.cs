@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Json;
+using System.Text.RegularExpressions;
 using static System.StringComparison;
 
 namespace Avails.D_Flat.Extensions
 {
     public static class StringExtensions
     {
-        private const string BAD_TIME_FORMAT_MESSAGE = "To convert to a time, the value must be a whole number or in [hh:]mm[:ss] format.";
+        private const string BadTimeFormatMessage = "To convert to a time, the value must be a whole number or in [hh:]mm[:ss] format.";
 
         public static bool IsNullEmptyOrWhitespace(this string value)
         {
@@ -29,7 +30,7 @@ namespace Avails.D_Flat.Extensions
         }
 
         public static string ToTitleCase(this string value
-                                       , bool        force = false)
+                                       , bool        force)
         {
             var ti = new CultureInfo("en-US"
                                    , false).TextInfo;
@@ -39,6 +40,13 @@ namespace Avails.D_Flat.Extensions
                 value = value?.ToLower();
             }
             return ti.ToTitleCase(value);
+        }
+        
+        public static string ToTitleCase(this string value)
+        {
+            var textInfo = new CultureInfo("en-US"
+                                         , false).TextInfo;
+            return textInfo.ToTitleCase(nameof(value));
         }
         
         public static TimeSpan ToTime(this string timeAsString)
@@ -66,7 +74,7 @@ namespace Avails.D_Flat.Extensions
 
             //Value is not in a time format (there is no ':' in string), throw error  
             if (! timeAsString.Contains(":"))
-                throw new FormatException(BAD_TIME_FORMAT_MESSAGE);
+                throw new FormatException(BadTimeFormatMessage);
 
             var timeParts = timeAsString.Split(':');
 
@@ -82,7 +90,7 @@ namespace Avails.D_Flat.Extensions
 
                 default:
 
-                    throw new FormatException(BAD_TIME_FORMAT_MESSAGE);
+                    throw new FormatException(BadTimeFormatMessage);
             }
         }
 
@@ -180,6 +188,8 @@ namespace Avails.D_Flat.Extensions
             {
                 if ( ! json.EndsWith("]"))
                 {
+                    //TODO: Just return... I don't think I need to throw an error here.
+                    //THis causes problems when the log is cleared out and then accessed again
                     throw new ArgumentException("JSON must end with ']'");
                 }
                 
@@ -190,8 +200,16 @@ namespace Avails.D_Flat.Extensions
             catch (Exception ex) 
             when (ex is ArgumentException)
             {
-                    return false;
+                return false;
             }
         }
+        
+        public static string SplitCamelCase(this string value)
+        {
+            return Regex.Replace(Regex.Replace(value, @"(\P{Ll})(\P{Ll}\p{Ll})", "$1 $2"),
+                                 @"(\p{Ll})(\P{Ll})",
+                                 "$1 $2");
+        }
+
     }
 }

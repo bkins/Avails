@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Avails.Xamarin.Logger;
 using Xamarin.Forms;
 
@@ -9,11 +8,11 @@ namespace Avails.Xamarin
 {
     public static class PageNavigation
     {
-        public static async Task NavigateTo(string nameOfPage)
+        public static void NavigateTo(string nameOfPage)
         {
             try
             {
-                await Navigate($"{nameOfPage}");
+                Navigate($"{nameOfPage}");
             }
             catch (Exception e)
             {
@@ -25,24 +24,23 @@ namespace Avails.Xamarin
             //await 
         }
 
-        public static async Task NavigateTo(string nameOfPage
+        public static void NavigateTo(string nameOfPage
                                           , string nameOfParameter1
                                           , string valueOfParameter1)
         {
-                await Navigate($"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}");
-            
+            Navigate($"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}");
         }
 
-        public static async Task NavigateTo(string nameOfPage
+        public static void NavigateTo(string nameOfPage
                                           , string nameOfParameter1
                                           , string valueOfParameter1
                                           , string nameOfParameter2
                                           , string valueOfParameter2)
         {
-            await Navigate($"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}&{nameOfParameter2}={valueOfParameter2}");
+            Navigate($"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}&{nameOfParameter2}={valueOfParameter2}");
         }
         
-        public static async Task NavigateTo(string nameOfPage
+        public static void NavigateTo(string nameOfPage
                                           , string nameOfParameter1
                                           , string valueOfParameter1
                                           , string nameOfParameter2
@@ -51,10 +49,10 @@ namespace Avails.Xamarin
                                           , string valueOfParameter3)
         {
             var path = $"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}&{nameOfParameter2}={valueOfParameter2}&{nameOfParameter3}={valueOfParameter3}";
-            await Navigate(path);
+            Navigate(path);
         }
 
-        public static async Task NavigateTo(string nameOfPage
+        public static void NavigateTo(string nameOfPage
                                           , string nameOfParameter1
                                           , string valueOfParameter1
                                           , string nameOfParameter2
@@ -67,25 +65,30 @@ namespace Avails.Xamarin
             var path
             = $"{nameOfPage}?{nameOfParameter1}={valueOfParameter1}&{nameOfParameter2}={valueOfParameter2}&{nameOfParameter3}={valueOfParameter3}&{nameOfParameter4}={valueOfParameter4}";
 
-            await Navigate(path);
+            Navigate(path);
         }
 
-        private static async Task Navigate(string path)
+        private static void Navigate(string path)
         {
             try
             {
-                await Shell.Current.GoToAsync(path);
+                Device.BeginInvokeOnMainThread(async () =>
+                {
+                    await Shell.Current.GoToAsync(path);    
+                });
             }
             catch (Exception e)
             {
                 Logger.Logger.WriteLineToToastForced(e.Message, Category.Error, e);
             }
-            
         }
 
-        public static async Task NavigateBackwards()
+        public static void NavigateBackwards()
         {
-            await Shell.Current.GoToAsync("..");
+            Device.BeginInvokeOnMainThread(async () =>
+            {
+                await Shell.Current.GoToAsync("..");
+            });
         }
     }
 }

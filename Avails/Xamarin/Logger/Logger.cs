@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Avails.D_Flat.Extensions;
@@ -10,6 +12,7 @@ using Avails.Xamarin.Interfaces;
 using Newtonsoft.Json;
 using NLog;
 using Xamarin.Forms;
+using Xamarin.Forms.Shapes;
 
 //using Microsoft.Maui.Controls;
 
@@ -34,7 +37,7 @@ namespace Avails.Xamarin.Logger
         }
         public static List<LogLine> LogList { get; set; }
 
-        private static bool Ascending { get; set; }
+        public static bool Ascending { get; set; }
         private static string Serialize(List<LogLine> list) => JsonConvert.SerializeObject(list);
 
         private const string LogIsEmpty = "Log is empty or there are not entries that match your search criteria.";
@@ -48,11 +51,10 @@ namespace Avails.Xamarin.Logger
             WriteToToast                = false;
             WriteToLogCat               = true;
             WriteLineToToastForcedNotAllowed = false;
-            Verbose                     = false;
+            Verbose                     = true;
             Ascending                   = true;
-            FullLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder
-                                                                            .LocalApplicationData)
-                                     , "Logger.txt");
+            FullLogPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)
+                                               , "Logger.txt");
 
             Log         = new StringBuilder(GetFileContents());
             CompleteLog = Log.ToString();
@@ -63,8 +65,7 @@ namespace Avails.Xamarin.Logger
         {
             var fileLines = new List<string>(fileContents.Split(new [] { Environment.NewLine }
                                                               , StringSplitOptions.RemoveEmptyEntries));
-
-            return (
+            var logLines = (
                 from line in fileLines
                 select line.Split(']')
                 into lineArray
@@ -72,7 +73,7 @@ namespace Avails.Xamarin.Logger
                                     .Replace("["
                                            , "")
                                     .Trim()
-                let categoryMessage = lineArray[1].Split(':')
+                let categoryMessage = lineArray.Length > 1 ? lineArray[1].Split(':') : lineArray[0].Split(':')
                 let lineCategory = categoryMessage[0].Trim()
                 let lineMessage = categoryMessage[1].Trim()
                 select new LogLine
@@ -81,6 +82,8 @@ namespace Avails.Xamarin.Logger
                          , Category  = GetEnum(lineCategory)
                          , Message   = lineMessage
                        } ).ToList();
+
+            return logLines;
 
             // return fileLines.Select(line => new LogLine { Message = line })
             //                 .ToList();
@@ -123,6 +126,8 @@ namespace Avails.Xamarin.Logger
 
         private static IOrderedEnumerable<LogLine> ToListOrderedByTimeStampDescending(SearchOptions options)
         {
+            Ascending = ! Ascending;
+            
             if (options.SearchTerm.IsNullEmptyOrWhitespace())
             {
                 return ToList().Where(  fields => FilterOptionsByCategory(options, fields))
@@ -155,6 +160,8 @@ namespace Avails.Xamarin.Logger
 
         private static IOrderedEnumerable<LogLine> ToListOrderedByTimeStampAscending(SearchOptions options)
         {
+            Ascending = ! Ascending;
+            
             if (options.SearchTerm.IsNullEmptyOrWhitespace())
             {
                 return ToList().Where(fields=>FilterOptionsByCategory(options, fields))
@@ -249,22 +256,65 @@ namespace Avails.Xamarin.Logger
             WriteToToast = setting;
         }
 
-        public static void WriteLine(string    message
-                                   , Category  category
-                                   , Exception ex = null)
+        public static void WriteLine(string                    message
+                                   , Category                  category
+                                   , Exception                 ex           = null
+                                   , string                    extraDetails = ""
+                                   , [CallerMemberName] string caller       = ""
+                                   , [CallerFilePath]   string file         = ""
+                                   , [CallerLineNumber] int    lineNumber   = 0)
+        {
+            try
+            {
+                LogTo(message
+                    , category
+                    , ex
+                    , extraDetails.IsNullEmptyOrWhitespace()
+                          ? extraDetails
+                          : $"{extraDetails}{Environment.NewLine}{GetCallingInfoForErrorMessage(caller, file, lineNumber, null)}");
+            }
+            catch (Exception e)
+            {
+                var errorMessage = GetCallingInfoForErrorMessage(caller, file, lineNumber, e);
+                
+                Console.WriteLine(errorMessage);
+                
+                var initialWriteToToastValue = WriteToToast;
+                WriteToToast = true;
+
+                LogToToast(errorMessage);
+
+                WriteToToast = initialWriteToToastValue;
+            }
+        }
+
+        private static string GetCallingInfoForErrorMessage(string    caller
+                                                          , string    file
+                                                          , int       lineNumber
+                                                          , Exception e)
+        {
+            return string.Format("Error in {0} calling {1}: {2} at line: {3}: {4}"
+                               , System.IO.Path.GetFileName(file) //.GetFileNameWithoutExtension(file)
+                               , caller
+                               , e?.Message ?? "<no exception provided>"
+                               , lineNumber
+                               , e?.StackTrace ?? "<no exception provided>");
+        }
+
+        private static void LogTo(string    message
+                                , Category  category
+                                , Exception ex
+                                , string    extraDetails)
         {
             var exceptionMessage = string.Empty;
-            
-            IntraAppCommunication.Instance.StringValue = message;
-            
-            if (ex != null)
-            {
-                exceptionMessage = LogVerboseInfo(ex);
-                message          = $"{message}{Environment.NewLine}{exceptionMessage}";
-            }
 
-            var line = AddToLogList(message
-                                  , category);
+            IntraAppCommunication.Instance.StringValue = message;
+
+            var line = BuildLogLine(message
+                                  , category
+                                  , ex
+                                  , ref exceptionMessage
+                                  , extraDetails);
 
             var completeLogMessage = line.ToString();
 
@@ -285,13 +335,63 @@ namespace Avails.Xamarin.Logger
             LogToToast(message);
         }
 
+        private static LogLine BuildLogLine(string     message
+                                          , Category   category
+                                          , Exception  ex
+                                          , ref string exceptionMessage
+                                          , string     extraDetails = "")
+        {
+            LogLine line;
+
+            if (ex != null)
+            {
+                exceptionMessage = LogVerboseInfo(ex);
+
+                line = AddToLogList(message
+                                  , category
+                                  , exceptionMessage
+                                  , extraDetails);
+            }
+            else
+            {
+                line = AddToLogList(message
+                                  , category
+                                  , extraDetails);
+            }
+
+            return line;
+        }
+
         private static LogLine AddToLogList(string   message
-                                          , Category category)
+                                          , Category category
+                                          , string   exceptionDetails
+                                          , string   extraDetails)
+        {
+            extraDetails = extraDetails.IsNullEmptyOrWhitespace() 
+                                            ? string.Empty 
+                                            : $"{extraDetails}";
+
+            var line = new LogLine
+                       {
+                           Category     = category
+                         , Message      = message
+                         , ExtraDetails = $"{exceptionDetails}{extraDetails}"
+                       };
+
+            LogList.Add(line);
+
+            return line;
+        }
+
+        private static LogLine AddToLogList(string   message
+                                          , Category category
+                                          , string extraDetails)
         {
             var line = new LogLine
                        {
-                           Category  = category
-                         , Message   = message
+                           Category     = category
+                         , Message      = message
+                         , ExtraDetails = extraDetails.IsNullEmptyOrWhitespace() ? null : extraDetails
                        };
 
             LogList.Add(line);
@@ -305,8 +405,12 @@ namespace Avails.Xamarin.Logger
 
             try
             {
-                DependencyService.Get<IMessage>()
-                                 .ShortAlert(completeLogMessage);
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    DependencyService.Get<IMessage>()
+                                     .ShortAlert(completeLogMessage);
+                });
+                
             }
             catch (Exception e)
             {
@@ -330,8 +434,11 @@ namespace Avails.Xamarin.Logger
             var currentLoggedList = JsonConvert.DeserializeObject<List<LogLine>>(currentlyLogged) ?? new List<LogLine>();
 
             currentLoggedList.AddRange(LogList);
-
-            File.WriteAllText(FullLogPath, Serialize(LogList));
+            
+            using var streamWriter = new StreamWriter(File.Create(FullLogPath));
+            streamWriter.Write(Serialize(LogList));
+            
+            //File.WriteAllText(FullLogPath, Serialize(LogList));
         }
 
         private static void LogToConsole(string   completeLogMessage
@@ -413,7 +520,7 @@ namespace Avails.Xamarin.Logger
                 {
                     WriteToLogCat = false;
 
-                    WriteLine($"An attempt to log to the Android LogCat failed, becuase: {e.Message}"
+                    WriteLine($"An attempt to log to the Android LogCat failed, because: {e.Message}"
                             , Category.Error
                             , e);
                     
@@ -424,14 +531,19 @@ namespace Avails.Xamarin.Logger
 
         private static string LogVerboseInfo(Exception ex)
         {
+            var stackTrace = "Stack Trace:";
+            
             if (ex.InnerException != null)
             {
+                stackTrace = $"Inner Exception {stackTrace}";
                 LogVerboseInfo(ex.InnerException);
             }
-
             var message = Verbose 
-                ? $"{ex.Message}{Environment.NewLine}{ex.StackTrace}" 
-                : ex?.Message;
+                ? $"{ex.Message}---{stackTrace}---{ex.StackTrace}" 
+                : ex.Message;
+            // var message = Verbose 
+            //     ? $"{ex.Message}{Environment.NewLine}{stackTrace}{Environment.NewLine}{ex.StackTrace}" 
+            //     : ex.Message;
 
             Log.AppendLine(message);
 
@@ -483,26 +595,29 @@ namespace Avails.Xamarin.Logger
             }
         }
 
-        public static string Clear()
+        public static void Clear()
         {
             Log.Clear();
+            LogList.Clear();
             
             CompleteLog = string.Empty;
             
             File.Delete(FullLogPath);
             File.Create(FullLogPath);
-
-            return LogIsEmpty;
         }
 
+        public static ObservableCollection<LogLine> SearchLogAsList(SearchOptions options)
+        {
+            return new ObservableCollection<LogLine>(LogList.Where(fields => FilterBySearchTerm(options
+                                                                                , fields)
+                                                                           && FilterOptionsByCategory(options
+                                                                                , fields)));
+        }
+        
         public static string SearchLog(SearchOptions options)
         {
 
-            var resultsList = LogList.Where(fields => FilterBySearchTerm(options
-                                                                       , fields)
-                                                   && FilterOptionsByCategory(options
-                                                                            , fields))
-                                     .ToList();
+            var resultsList = SearchLogAsList(options).ToList();
 
             return ListToString(resultsList);
         }
